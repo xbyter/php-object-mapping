@@ -4,12 +4,12 @@
   "type": "library",
   "license": "MIT",
   "keywords": [
-    "request",
-    "bean",
-    "entity",
     "mapping",
     "object-mapping",
-    "object-fill"
+    "object-fill",
+    "request",
+    "bean",
+    "entity"
   ],
   "homepage": "https://github.com/xbyter/php-object-mapping",
   "require": {
@@ -27,7 +27,6 @@
     }
   },
   "require-dev": {
-    "vlucas/phpdotenv": "^3.3",
     "phpunit/phpunit": "^6.5.6 || ^7.0 || ^9.6"
   }
 }

@@ -35,32 +35,32 @@ class PropertyDocParser
             }
 
             $name = $property->getName();
-            $_properties[$name] = [
-                'name'        => $name,
-                'type'        => 'string',
-                'class_name'    => null,
-                'nullable'    => true,
-                'decorator' => null,//装饰器, 用于转换为新的值
-            ];
+
+            $_properties[$name] = $propertyInfo = new PropertyInfo();
+            $propertyInfo->name = $name;
+            $propertyInfo->type = 'string';
+            $propertyInfo->class_name = null;
+            $propertyInfo->nullable = true;
+            $propertyInfo->decorator = null;
+
 
             //根据参数Doc文档设置指定对象值
             $doc = $property->getDocComment();
             //解析$type装饰类，用于转换某种具体规则的值。比如转换时区（业务逻辑层以固定时区做逻辑处理，展示层可以加$type转为相应时区值）
             if ($doc) {
-                $_properties[$name]['decorator'] = self::getDecoratorByDoc($doc);
+                $propertyInfo->decorator = self::getDecoratorByDoc($doc);
             }
 
             //如果属性是强类型, 则以强类型为主将类型注入到propertyTypes里
             if ($property->hasType() && $property->getType() instanceof \ReflectionNamedType) {
                 $typeName = $property->getType()->getName();
-                $_properties[$name] = [
-                        'type'     => $typeName,
-                        'class_name' => self::isScalarType($typeName) || self::isArrayType($typeName) ? null : $typeName,
-                        'nullable' => $property->getType()->allowsNull(),
-                    ] + $_properties[$name];
+                $propertyInfo->type = $typeName;
+                $propertyInfo->class_name = $propertyInfo->isScalarType() || $propertyInfo->isArrayType() ? null : $typeName;
+                $propertyInfo->nullable = $property->getType()->allowsNull();
+                $propertyInfo->type = $typeName;
 
                 //如果不是数组的话则已经确定类型了, 不必往下走
-                if (!self::isArrayType($typeName)) {
+                if (!$propertyInfo->isArrayType()) {
                     continue;
                 }
             }
@@ -84,15 +84,14 @@ class PropertyDocParser
                 }
 
                 $isArray = isset($matches[2]);
-                if ($isArray && $_properties[$name]['type'] === 'array' && class_exists($matchType)) {
-                    $_properties[$name]['class_name'] = $matchType;
+                if ($isArray && $propertyInfo->type === 'array' && class_exists($matchType)) {
+                    $propertyInfo->class_name = $matchType;
                 }
             }
         }
 
         return $_properties;
     }
-
 
     /**
      * 获取装饰类
@@ -111,57 +110,5 @@ class PropertyDocParser
         }
 
         return $decorator;
-    }
-
-    public static function isStringType(string $type): bool
-    {
-        return $type === 'string';
-    }
-
-    public static function isIntType(string $type): bool
-    {
-        return $type === 'int';
-    }
-
-    public static function isFloatType(string $type): bool
-    {
-        return $type === 'float';
-    }
-
-    public static function isBoolType(string $type): bool
-    {
-        return $type === 'bool';
-    }
-
-    public static function isArrayType(string $type): bool
-    {
-        return $type === 'array';
-    }
-
-    /**
-     * 是否是标量（简单类型）
-     *
-     * @param string $type
-     * @return bool
-     */
-    public static function isScalarType(string $type): bool
-    {
-        return self::isStringType($type) || self::isIntType($type) || self::isFloatType($type) || self::isBoolType($type);
-    }
-
-
-    public static function isNumberType(string $type): bool
-    {
-        return self::isIntType($type) || self::isFloatType($type);
-    }
-
-    public static function isClassType(array $property): bool
-    {
-        return $property['class_name'] && !self::isArrayType($property['type']);
-    }
-
-    public static function isClassArrayType(array $property): bool
-    {
-        return $property['class_name'] && self::isArrayType($property['type']);
     }
 }

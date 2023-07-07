@@ -9,8 +9,6 @@ class PropertySetter
     /** @var object 要设置的类 */
     protected object $class;
 
-
-
     public function __construct(object $class)
     {
         $this->class = $class;
@@ -48,27 +46,28 @@ class PropertySetter
             }
 
             try {
-                $property = $properties[$propertyName];
+                /** @var \Xbyter\PhpObjectMapping\PropertyInfo $propertyInfo */
+                $propertyInfo = $properties[$propertyName];
                 //如果没有包含类对象的话则直接设置值
-                if (!$property['class_name']) {
-                    $this->setPropertyValue($propertyName, $propertyValue, $property['decorator']);
+                if (!$propertyInfo->class_name) {
+                    $this->setPropertyValue($propertyName, $propertyValue, $propertyInfo->decorator);
                     continue;
                 }
 
                 //数组对象循环实例化
-                if (PropertyDocParser::isArrayType($property['type'])) {
+                if ($propertyInfo->isArrayType()) {
                     if (!is_iterable($propertyValue) && !is_object($propertyValue)) {
                         throw new \ErrorException($this->getIterableTypeErrorMessage($fullProperties));
                     }
 
                     $values = [];
                     foreach ($propertyValue as $item) {
-                        $values[] = $newInstanceCallback($property['class_name'], $item, $fullProperties);
+                        $values[] = $newInstanceCallback($propertyInfo->class_name, $item, $fullProperties);
                     }
-                    $this->setPropertyValue($propertyName, $values, $property['decorator']);
+                    $this->setPropertyValue($propertyName, $values, $propertyInfo->decorator);
                 } else {
-                    $value = $newInstanceCallback($property['class_name'], $propertyValue, $fullProperties);
-                    $this->setPropertyValue($propertyName, $value, $property['decorator']);
+                    $value = $newInstanceCallback($propertyInfo->class_name, $propertyValue, $fullProperties);
+                    $this->setPropertyValue($propertyName, $value, $propertyInfo->decorator);
                 }
             } catch (PropertySetError $e) {
                 throw $e;
@@ -82,11 +81,11 @@ class PropertySetter
     /**
      * 设置属性值
      *
-     * @param string $property
+     * @param string $propertyName
      * @param $value
      * @param string|null $decoratorName
      */
-    protected function setPropertyValue(string $property, $value, ?string $decoratorName = null): void
+    protected function setPropertyValue(string $propertyName, $value, ?string $decoratorName = null): void
     {
         if ($decoratorName) {
             //如果有装饰器, 则转为最新的值再赋值
@@ -95,7 +94,7 @@ class PropertySetter
                 $value = $decorator->decorate($value);
             }
         }
-        $this->class->{$property} = $value;
+        $this->class->{$propertyName} = $value;
     }
 
 

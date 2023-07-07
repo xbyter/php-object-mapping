@@ -84,15 +84,18 @@ class PropertySetter
      * @param string $propertyName
      * @param $value
      * @param string|null $decoratorName
+     * @throws \ErrorException
      */
     protected function setPropertyValue(string $propertyName, $value, ?string $decoratorName = null): void
     {
         if ($decoratorName) {
+            if (!is_subclass_of($decoratorName, \Xbyter\PhpObjectMapping\Interfaces\DecoratorInterface::class)) {
+                throw new \ErrorException('The decorator does not implement DecoratorInterface');
+            }
+
             //如果有装饰器, 则转为最新的值再赋值
             $decorator = new $decoratorName();
-            if ($decorator instanceof \Xbyter\PhpObjectMapping\Interfaces\DecoratorInterface) {
-                $value = $decorator->decorate($value);
-            }
+            $value = $decorator->decorate($value);
         }
         $this->class->{$propertyName} = $value;
     }

@@ -78,7 +78,7 @@ class PropertyDocParser
                     continue;
                 }
 
-                //如果注释没有命名空间, 则查看是否再当前命名空间下存在该类
+                //如果注释没有命名空间, 则查看是否在当前命名空间下存在该类
                 if (strpos($matchType, "\\") !== 0) {
                     $matchType = $reflection->getNamespaceName() . "\\" . $matchType;
                 }
@@ -105,8 +105,12 @@ class PropertyDocParser
         //解析类似@return DecoratorInterface 的文档对象
         preg_match("/@return[ ]+([\w\\\]+)/", $doc, $matches);
         $decorator = $matches[1] ?? '';
-        if (!$decorator || !class_exists($decorator)) {
+        if (!$decorator) {
             return null;
+        }
+
+        if (!is_subclass_of($decorator, \Xbyter\PhpObjectMapping\Interfaces\DecoratorInterface::class)) {
+            throw new \ErrorException('The decorator does not implement DecoratorInterface');
         }
 
         return $decorator;
